@@ -46,8 +46,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\ChatBox.cs" />
-     <Compile Include="Assets\NetworkSetup.cs" />
+     <Compile Include="Assets\Scripts\Database\DataBase.cs" />
+     <Compile Include="Assets\Scripts\Database\SessionManager.cs" />
+     <Compile Include="Assets\Scripts\Networking\ChatBox.cs" />
+     <Compile Include="Assets\Scripts\Networking\NetworkSetup.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
