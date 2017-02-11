@@ -1,13 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 [AddComponentMenu ("Network/NetworkSetup")]
 public class NetworkSetup : MonoBehaviour
 {
-	[SerializeField] public string onlineScenePath;
+	[SerializeField] private string offlineScenePath;
+	[SerializeField] private string onlineScenePath;
 	[SerializeField] private GameObject player;
 
     private string serverName = "game";
@@ -32,8 +35,6 @@ public class NetworkSetup : MonoBehaviour
 
     private void OnGUI()
     {
-        windowHost = GUI.Window(0, windowHost, WindowHost, "Servers");
-
         if (serverError)
         {
             windowError = GUI.Window(1, windowError, WindowError, "Connection Error");
@@ -41,6 +42,8 @@ public class NetworkSetup : MonoBehaviour
 
         if (Network.peerType == NetworkPeerType.Disconnected)
         {
+			windowHost = GUI.Window(0, windowHost, WindowHost, "Servers");
+
             GUILayout.Label("Server name : ");
             serverName = GUILayout.TextField(serverName);
 
@@ -58,10 +61,12 @@ public class NetworkSetup : MonoBehaviour
                 print(status.ToString());*/
 
                 Network.InitializeSecurity();
-                Network.InitializeServer(int.Parse(maxPlayer), int.Parse(port), !haveNat);
-                Debug.Log("Server started at " + Network.player.externalIP + " port " + Network.player.externalPort);
+				Network.InitializeServer (int.Parse (maxPlayer), int.Parse (port), !haveNat);
 
-                MasterServer.RegisterHost("PVP", serverName);
+				MasterServer.RegisterHost("PVP", serverName);
+
+				StartCoroutine (LoadOnlineSceneAsync ());
+				Debug.Log("Server started at " + Network.player.externalIP + " port " + Network.player.externalPort);
             }
         }
         else
@@ -69,6 +74,7 @@ public class NetworkSetup : MonoBehaviour
             if (GUILayout.Button("Disconnect"))
             {
                 Network.Disconnect();
+				StartCoroutine(LoadOfflineSceneAsync());
             }
         }
     }
@@ -125,37 +131,68 @@ public class NetworkSetup : MonoBehaviour
 		MasterServer.ipAddress = "88.173.176.162"; 
 		MasterServer.port = 23466;
 	}
+
+	private IEnumerator LoadOfflineSceneAsync()
+	{
+		AsyncOperation loadAsync = SceneManager.LoadSceneAsync(offlineScenePath);
+
+		while (!loadAsync.isDone) 
+		{
+			yield return null;
+		}
+	}
+
+	private IEnumerator LoadOnlineSceneAsync()
+	{
+		AsyncOperation loadAsync = SceneManager.LoadSceneAsync(onlineScenePath);
+
+		while (!loadAsync.isDone) 
+		{
+			yield return null;
+		}
+
+		Network.Instantiate(player, Vector3.zero, Quaternion.identity, 0);
+	}
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(NetworkSetup), true)]
 public class NetworkSetupEditor : Editor
 {
-	private SerializedProperty playerProp;
+	private SerializedProperty offlineScenePathProp;
 	private SerializedProperty onlineScenePathProp;
+	private SerializedProperty playerProp;
 
 	void OnEnable () 
 	{
-		playerProp = serializedObject.FindProperty ("player");
+		offlineScenePathProp = serializedObject.FindProperty ("offlineScenePath");
 		onlineScenePathProp = serializedObject.FindProperty ("onlineScenePath");
+		playerProp = serializedObject.FindProperty ("player");
 	}
 
 	public override void OnInspectorGUI()
 	{
-		SceneAsset oldScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(onlineScenePathProp.stringValue);
+		SceneAsset oldOfflineScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(offlineScenePathProp.stringValue);
+		SceneAsset oldOnlineScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(onlineScenePathProp.stringValue);
 
 		serializedObject.Update();
 
 		EditorGUILayout.PropertyField (playerProp);
+
 		EditorGUI.BeginChangeCheck();
-		SceneAsset newScene = EditorGUILayout.ObjectField("Online Scene", oldScene, typeof(SceneAsset), false) as SceneAsset;
+		SceneAsset newOfflineScene = EditorGUILayout.ObjectField("Offline Scene", oldOfflineScene, typeof(SceneAsset), false) as SceneAsset;
+		SceneAsset newOnlineScene = EditorGUILayout.ObjectField("Online Scene", oldOnlineScene, typeof(SceneAsset), false) as SceneAsset;
 
 		if (EditorGUI.EndChangeCheck())
 		{
-			string newPath = AssetDatabase.GetAssetPath(newScene);
-			SerializedProperty scenePathProperty = serializedObject.FindProperty("onlineScenePath");
-			scenePathProperty.stringValue = newPath;
+			string newOfflinePath = AssetDatabase.GetAssetPath(newOfflineScene);
+			offlineScenePathProp.stringValue = newOfflinePath;
+
+			string newOnlinePath = AssetDatabase.GetAssetPath(newOnlineScene);
+			onlineScenePathProp.stringValue = newOnlinePath;
 		}
 
 		serializedObject.ApplyModifiedProperties();
 	}
 }
+#endif
