@@ -9,19 +9,14 @@ public class SessionManager : DataBase<Session>
 	[SerializeField] private GameObject sessionUI;
 	[SerializeField] private NetworkManager networkManager;
 
-	private void Start()
-	{
-		ListSession ();
-	}
-
 	public void CreatSession(Session session)
 	{
-		Post ("mafialaw.alwaysdata.net/game.php?action=creatSession", session);
+		Post ("http://mafialaw.alwaysdata.net/game.php?action=creatSession", session);
 	}
 
 	public void ListSession()
 	{
-		Query ("mafialaw.alwaysdata.net/game.php?action=listSession", ref sessions);
+		Query ("http://mafialaw.alwaysdata.net/game.php?action=listSession", ref sessions);
 		StartCoroutine (ListSessionCoroutine ());
 	}
 

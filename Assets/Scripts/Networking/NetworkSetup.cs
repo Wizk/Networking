@@ -35,6 +35,11 @@ public class NetworkSetup : MonoBehaviour
 
     private void OnGUI()
     {
+		if (!UserManager.Connected) 
+		{
+			return;
+		}
+
         if (serverError)
         {
             windowError = GUI.Window(1, windowError, WindowError, "Connection Error");
@@ -105,6 +110,7 @@ public class NetworkSetup : MonoBehaviour
 					}
 
 					Network.Connect(serverIp, data[i].port);
+					StartCoroutine (LoadOnlineSceneAsync ());
 					Debug.Log ("Connect to host : " + serverIp + "; port : " + data[i].port);
                 }
             }
