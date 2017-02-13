@@ -1,30 +1,35 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
+#pragma warning disable 618
+
 [AddComponentMenu ("Network/NetworkSetup")]
-public class NetworkSetup : MonoBehaviour
+public class NetworkSetup : NetworkBehaviour
 {
 	[SerializeField] private string offlineScenePath;
 	[SerializeField] private string onlineScenePath;
 	[SerializeField] private GameObject player;
 
+	private NetworkManager mana;
     private string serverName = "game";
     private string maxPlayer = "16";
     private string port = "25000";
 
-    private Rect windowHost = new Rect(Screen.width - 300, 0, 300, Screen.height);
+	private Rect windowHost = new Rect(Screen.width - 300, 100, 300, Screen.height - 100);
+	private Rect windowServer = new Rect(300, 100, 300, Screen.height - 100);
     private Rect windowError = new Rect(Screen.width / 2 - 150, Screen.height / 2 - 75, 300, 150);
     
 	private bool serverError = false;
 
     private void Awake()
     {
-        DontDestroyOnLoad(transform.gameObject);
+		DontDestroyOnLoad(this);
     }
 
 	private void Start()
@@ -35,10 +40,7 @@ public class NetworkSetup : MonoBehaviour
 
     private void OnGUI()
     {
-		if (!UserManager.Connected) 
-		{
-			return;
-		}
+		//if (!UserManager.Connected) { return; }
 
         if (serverError)
         {
@@ -47,32 +49,8 @@ public class NetworkSetup : MonoBehaviour
 
         if (Network.peerType == NetworkPeerType.Disconnected)
         {
-			windowHost = GUI.Window(0, windowHost, WindowHost, "Servers");
-
-            GUILayout.Label("Server name : ");
-            serverName = GUILayout.TextField(serverName);
-
-            GUILayout.Label("Max player : ");
-            maxPlayer = GUILayout.TextField(maxPlayer);
-
-            GUILayout.Label("Port : ");
-            port = GUILayout.TextField(port);
-
-            if (GUILayout.Button("Creat server"))
-            {
-                bool haveNat = Network.HavePublicAddress();
-
-                /*ConnectionTesterStatus status = Network.TestConnection();
-                print(status.ToString());*/
-
-                Network.InitializeSecurity();
-				Network.InitializeServer (int.Parse (maxPlayer), int.Parse (port), !haveNat);
-
-				MasterServer.RegisterHost("PVP", serverName);
-
-				StartCoroutine (LoadOnlineSceneAsync ());
-				Debug.Log("Server started at " + Network.player.externalIP + " port " + Network.player.externalPort);
-            }
+			windowHost = GUI.Window(0, windowHost, WindowHost, "Join Server");
+			windowServer = GUI.Window(9, windowServer, WindowServer, "Creat Server");
         }
         else
         {
@@ -101,7 +79,7 @@ public class NetworkSetup : MonoBehaviour
 
             for (int i = 0; i < data.Length; i++)
             {
-				if (GUILayout.Button(data[i].gameName))
+				if (GUILayout.Button(data[i].gameType + " " + data[i].gameName + " " + data[i].connectedPlayers + " / " + data[i].playerLimit + " " + (data[i].passwordProtected ? "locked" : "open")))
                 {
 					string serverIp = "";
 					for(int j = 0; j < data[i].ip.Length; j++)
@@ -109,8 +87,7 @@ public class NetworkSetup : MonoBehaviour
 						serverIp += data [i].ip [j] + " ";
 					}
 
-					Network.Connect(serverIp, data[i].port);
-					StartCoroutine (LoadOnlineSceneAsync ());
+					StartCoroutine (Connect (serverIp, data [i].port));
 					Debug.Log ("Connect to host : " + serverIp + "; port : " + data[i].port);
                 }
             }
@@ -118,6 +95,33 @@ public class NetworkSetup : MonoBehaviour
 
 		GUI.DragWindow(new Rect(0, 0, Screen.width, Screen.height));
     }
+
+	private void WindowServer(int id)
+	{
+		GUILayout.Label("Server name : ");
+		serverName = GUILayout.TextField(serverName);
+
+		GUILayout.Label("Max player : ");
+		maxPlayer = GUILayout.TextField(maxPlayer);
+
+		GUILayout.Label("Port : ");
+		port = GUILayout.TextField(port);
+
+		if (GUILayout.Button("Creat server"))
+		{
+			bool haveNat = Network.HavePublicAddress();
+
+			Network.InitializeSecurity();
+			Network.InitializeServer (int.Parse (maxPlayer), int.Parse (port), !haveNat);
+
+			MasterServer.RegisterHost("PVP", serverName);
+
+			StartCoroutine (LoadOnlineSceneAsync ());
+			Debug.Log("Server started at " + Network.player.externalIP + " port " + Network.player.externalPort);
+		}
+
+		GUI.DragWindow(new Rect(0, 0, Screen.width, Screen.height));
+	}
 
     private void WindowError(int id)
     {
@@ -148,8 +152,13 @@ public class NetworkSetup : MonoBehaviour
 		}
 	}
 
+	[RPC]
 	private IEnumerator LoadOnlineSceneAsync()
 	{
+		Network.SetSendingEnabled (0, false);
+		Network.isMessageQueueRunning = false;
+		Network.SetLevelPrefix (1);
+
 		AsyncOperation loadAsync = SceneManager.LoadSceneAsync(onlineScenePath);
 
 		while (!loadAsync.isDone) 
@@ -157,7 +166,30 @@ public class NetworkSetup : MonoBehaviour
 			yield return null;
 		}
 
-		Network.Instantiate(player, Vector3.zero, Quaternion.identity, 0);
+		Network.isMessageQueueRunning = true;
+		Network.SetSendingEnabled (0, true);
+
+		CmdSpawn (player, new Vector3 (Random.Range (-5, 5), Random.Range (-5, 5), Random.Range (-5, 5)));
+		//Network.Instantiate(player, new Vector3(Random.Range(-5,5), Random.Range(-5,5), Random.Range(-5,5)), Quaternion.identity, 0);
+	}
+
+	[Command]
+	private void CmdSpawn(GameObject go, Vector3 position)
+	{
+		go.transform.position = position;
+		NetworkServer.Spawn (go);
+	}
+
+	private IEnumerator Connect(string ip, int port)
+	{
+		Network.Connect(ip, port);
+
+		while (Network.peerType != NetworkPeerType.Client) 
+		{
+			yield return null;
+		}
+
+		StartCoroutine (LoadOnlineSceneAsync ());
 	}
 }
 

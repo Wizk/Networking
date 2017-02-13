@@ -27,17 +27,17 @@ public class UserManager : DataBase<User>
 	{
 		if (Connected) 
 		{
-			GUI.Window (3, userPanelRect, WindowUserPanel, "User Panel");
+			userPanelRect = GUI.Window (5, userPanelRect, WindowUserPanel, "User Panel");
 		}
 		else
 		{
 			if (registered) 
 			{
-				GUI.Window (3, loginWindowRect, WindowLogin, "Login");
+				loginWindowRect = GUI.Window (3, loginWindowRect, WindowLogin, "Login");
 			}
 			else 
 			{
-				GUI.Window (4, signinWindowRect, WindowSignin, "Sign in");
+				signinWindowRect = GUI.Window (4, signinWindowRect, WindowSignin, "Sign in");
 			}
 		}
 	}
