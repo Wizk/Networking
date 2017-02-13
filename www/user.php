@@ -22,13 +22,14 @@
 	
 	if($_GET['action'] == "signin") //&& !empty($_POST))
 	{
-		$email = "babtou@gmail.com";//$_POST["email"];
-		$username = "tesfsst";//$_POST["username"];
-		$password = "000000";//$_POST["password"];
+		$email = $_POST["email"];
+		$username = $_POST["username"];
+		$password = $_POST["password"];
 		
 		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) 
 		{
-			echo("Email is not valid\n");
+			echo("Email is not valid");
+			return;
 		}
 		
 		$request = $connection->query("SELECT * FROM `user` WHERE username='$username'");
@@ -36,14 +37,17 @@
 		
 		if($data)
 		{
-			echo "Username already exist\n";
+			echo "Username already exist";
+			return;
 		}
 		
 		if(strlen($password) < 6)
 		{
-			echo "Password must contain at least 6 characters\n";
+			echo "Password must contain at least 6 characters";
+			return;
 		}
 		
+		echo "1";
 		$connection->exec("INSERT INTO user VALUES(NULL, '$email', '$username', '$password')");
 	}
 ?>

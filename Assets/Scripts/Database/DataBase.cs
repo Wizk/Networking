@@ -75,4 +75,29 @@ public abstract class DataBase<TABLE> : MonoBehaviour
 		}
 	}
 
+	public IEnumerator CheckQuery(string url,  TABLE table, System.Action<bool> answer, System.Action<string> error)
+	{
+		WWWForm form = new WWWForm ();
+		System.Reflection.FieldInfo[] parameters = table.GetType ().GetFields ();
+
+		for (int i = 0; parameters.Length > i; i++) 
+		{
+			form.AddField (parameters[i].Name, (string)parameters[i].GetValue(table));
+		}
+
+		WWW www = new WWW (url, form);
+		yield return www;
+
+		string rawData = www.text;
+
+		if(rawData == "1")
+		{
+			answer(true);
+		}
+		else
+		{
+			error(rawData);
+			answer(false);
+		}
+	}
 }

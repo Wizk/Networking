@@ -9,16 +9,18 @@ public class UserManager : DataBase<User>
 	private static string password = "";
 
 	private Rect loginWindowRect = new Rect (Screen.width / 2 - 90, Screen.height / 2 - 100, 180, 200);
-	private Rect signinWindowRect = new Rect (Screen.width / 2 - 90, Screen.height / 2 - 100, 180, 200);
-	private Rect userPanelRect = new Rect (0, Screen.height - 180, 180, 200);
+	private Rect signinWindowRect = new Rect (Screen.width / 2 - 90, Screen.height / 2 - 115, 180, 230);
+	private Rect userPanelRect = new Rect (0, Screen.height - 100, 180, 100);
 
 	private bool registered = true;
 	private static bool connected = false;
-	private string connectionError;
+
+	private string connectionError = "";
+	private string signinError = "";
 
 	private void Awake()
 	{
-		DontDestroyOnLoad(transform.gameObject);
+		DontDestroyOnLoad(this);
 	}
 
 	private void OnGUI()
@@ -67,6 +69,10 @@ public class UserManager : DataBase<User>
 
 	private void WindowSignin(int id)
 	{
+		GUI.color = Color.red;
+		GUILayout.Label (signinError);
+		GUI.color = Color.white;
+
 		GUILayout.Label ("*Email :");
 		email = GUILayout.TextField (email);
 
@@ -76,6 +82,7 @@ public class UserManager : DataBase<User>
 		GUILayout.Label ("*Password :");
 		password = GUILayout.PasswordField (password, '*');
 
+		GUILayout.Space (5);
 		if (GUILayout.Button ("Sign in")) 
 		{
 			StartCoroutine (Signin ());
@@ -92,28 +99,28 @@ public class UserManager : DataBase<User>
 		{
 			StartCoroutine (Logout ());
 		}
-		GUILayout.Space (20);
 	}
 
 	private IEnumerator Connect()
 	{
 		User user = new User (email, username, password);
-		yield return StartCoroutine(CheckQuery("http://mafialaw.alwaysdata.net/user.php?action=login", user, value => Connected = value));
+		yield return StartCoroutine(CheckQuery("http://mafialaw.alwaysdata.net/user.php?action=login", user, value => Connected = value, value => connectionError = value));
 
-		if (!connected) 
-		{
-			connectionError = "Invalid credential";
-			yield break;
-		}
-
-		registered = true;
+		if (!connected) { registered = true; }
 	}
 
 	private IEnumerator Signin()
 	{
+		bool isValid = false;
+
 		User user = new User (email, username, password);
-		yield return StartCoroutine(Post ("http://mafialaw.alwaysdata.net/user.php?action=signin", user));
-		StartCoroutine(Connect ());
+
+		yield return StartCoroutine(CheckQuery ("http://mafialaw.alwaysdata.net/user.php?action=signin", user, value => isValid = value, value => signinError = value));
+
+		if (isValid) 
+		{
+			StartCoroutine (Connect ());
+		}
 	}
 
 	private IEnumerator Logout()
@@ -124,6 +131,8 @@ public class UserManager : DataBase<User>
 		username = "";
 		password = "";		
 		connectionError = "";
+
+		
 		Connected = false;
 
 		yield return null;
