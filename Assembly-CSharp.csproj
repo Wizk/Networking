@@ -52,9 +52,6 @@
      <Compile Include="Assets\Scripts\Database\UserManager.cs" />
      <Compile Include="Assets\Scripts\Networking\ChatBox.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkSetup.cs" />
- <Reference Include="UnityEngine.Advertisements">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Advertisements/UnityEngine.Advertisements.dll</HintPath>
- </Reference>
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

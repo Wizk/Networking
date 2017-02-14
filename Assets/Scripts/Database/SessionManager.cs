@@ -16,7 +16,7 @@ public class SessionManager : DataBase<Session>
 
 	public void ListSession()
 	{
-		Query ("http://mafialaw.alwaysdata.net/game.php?action=listSession", ref sessions);
+//		Query ("http://mafialaw.alwaysdata.net/game.php?action=listSession", ref sessions);
 		StartCoroutine (ListSessionCoroutine ());
 	}
 

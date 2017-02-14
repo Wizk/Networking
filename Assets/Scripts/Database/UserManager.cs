@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class UserManager : DataBase<User> 
 {
+	private static int id;
 	private static string email = "";
 	private static string username = "";
 	private static string password = "";
@@ -105,7 +106,8 @@ public class UserManager : DataBase<User>
 	{
 		User user = new User (email, username, password);
 		yield return StartCoroutine(CheckQuery("http://mafialaw.alwaysdata.net/user.php?action=login", user, value => Connected = value, value => connectionError = value));
-
+		//TODO
+			
 		if (!connected) { registered = true; }
 	}
 
@@ -157,11 +159,20 @@ public class UserManager : DataBase<User>
 			connected = value;
 		}
 	}
+
+	public static int Id
+	{
+		get
+		{ 
+			return id;
+		}
+	}
 }
 
 [System.Serializable]
 public class User
 {
+	public int id;
 	public string email;
 	public string username;
 	public string password;

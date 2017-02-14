@@ -23,12 +23,7 @@ public abstract class DataBase<TABLE> : MonoBehaviour
 		yield return www;
 	}
 
-	public void Query(string url, ref List<TABLE> table)
-	{
-		StartCoroutine (QueryCoroutine (url, table));
-	}
-
-	private IEnumerator QueryCoroutine(string url, List<TABLE> table)
+	public IEnumerator Query(string url, List<TABLE> table)
 	{
 		WWW www = new WWW (url);
 		yield return www;
@@ -75,6 +70,7 @@ public abstract class DataBase<TABLE> : MonoBehaviour
 		}
 	}
 
+	// A optimiser
 	public IEnumerator CheckQuery(string url,  TABLE table, System.Action<bool> answer, System.Action<string> error)
 	{
 		WWWForm form = new WWWForm ();
