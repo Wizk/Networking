@@ -1,15 +1,15 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
-public abstract class DataBase<TABLE> : MonoBehaviour
+public static class DataBase
 {
-	public TABLE ToObject(string data)
+	private static object ToObject(string data)
 	{
-		return JsonUtility.FromJson<TABLE> (data);
+		return JsonUtility.FromJson<object> (data);
 	}
 
-	public IEnumerator Post(string url, TABLE table)
+	private static WWW Request(string url, object table)
 	{
 		WWWForm form = new WWWForm ();
 		System.Reflection.FieldInfo[] parameters = table.GetType ().GetFields ();
@@ -19,81 +19,82 @@ public abstract class DataBase<TABLE> : MonoBehaviour
 			form.AddField (parameters[i].Name, (string)parameters[i].GetValue(table));
 		}
 
-		WWW www = new WWW (url, form);
-		yield return www;
+		return new WWW (url, form);
 	}
 
-	public IEnumerator Query(string url, List<TABLE> table)
+	public static void Post(string url, object table)
+	{
+		WWWForm form = new WWWForm ();
+		System.Reflection.FieldInfo[] parameters = table.GetType ().GetFields ();
+
+		for (int i = 0; parameters.Length > i; i++) 
+		{
+			form.AddField (parameters[i].Name, parameters[i].GetValue(table).ToString());
+		}
+
+		WWW www = new WWW (url, form);
+
+
+		System.Threading.ThreadPool.QueueUserWorkItem (new System.Threading.WaitCallback(Post), www); // TODO
+	}
+
+	public static void Fetch(string url, object table)
 	{
 		WWW www = new WWW (url);
-		yield return www;
+		while (!www.isDone) { Debug.Log("test"); }
+
+		table = ToObject(www.text);
+	}
+
+	public static void Fetch(string url, object table, char split)
+	{
+		WWW www = new WWW (url);
+		while (!www.isDone) 
+		{
+			Debug.Log("test");
+		}
 
 		string rawData = www.text;
 		string data = "";
 
 		for(int i = 0; rawData.Length > i; i++)
 		{
-			if (rawData [i] != ';') 
+			if (rawData [i] != split) 
 			{
 				data += rawData [i];
 			}
 			else
 			{
-				table.Add(ToObject(data));
+				object[] parameters = new object[1];
+				parameters [0] = ToObject (data);
+
+				table.GetType ().GetMethod ("Add").Invoke (table, parameters);
 				data = "";
 			}
 		}
 	}
 
-	public IEnumerator CheckQuery(string url,  TABLE table, System.Action<bool> answer)
+	public static bool CheckQuery(string url,  object table)
 	{
-		WWWForm form = new WWWForm ();
-		System.Reflection.FieldInfo[] parameters = table.GetType ().GetFields ();
+		WWW www = Request (url, table);
 
-		for (int i = 0; parameters.Length > i; i++) 
-		{
-			form.AddField (parameters[i].Name, (string)parameters[i].GetValue(table));
-		}
+		while (!www.isDone) { Debug.Log("test"); }
 
-		WWW www = new WWW (url, form);
-		yield return www;
-
-		string rawData = www.text;
-
-		if(rawData == "1")
-		{
-			answer(true);
-		}
-		else
-		{
-			answer(false);
-		}
+		if(www.text != "") { return true; }
+		else { return false; }
 	}
 
-	// A optimiser
-	public IEnumerator CheckQuery(string url,  TABLE table, System.Action<bool> answer, System.Action<string> error)
+	public static bool CheckQuery(string url,  object table, System.Action<string> comment)
 	{
-		WWWForm form = new WWWForm ();
-		System.Reflection.FieldInfo[] parameters = table.GetType ().GetFields ();
+		WWW www = Request (url, table);
 
-		for (int i = 0; parameters.Length > i; i++) 
+		while (!www.isDone) { Debug.Log("test"); }
+
+		if(www.text != "")
 		{
-			form.AddField (parameters[i].Name, (string)parameters[i].GetValue(table));
+			comment(www.text);
+			return true;
 		}
-
-		WWW www = new WWW (url, form);
-		yield return www;
-
-		string rawData = www.text;
-
-		if(rawData == "1")
-		{
-			answer(true);
-		}
-		else
-		{
-			error(rawData);
-			answer(false);
-		}
+		else { return false; }
 	}
 }

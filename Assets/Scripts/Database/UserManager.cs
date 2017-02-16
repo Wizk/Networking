@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UserManager : DataBase<User> 
+public class UserManager : MonoBehaviour
 {
-	private static int id;
-	private static string email = "";
-	private static string username = "";
-	private static string password = "";
+	private static User user = new User ();
 
 	private Rect loginWindowRect = new Rect (Screen.width / 2 - 90, Screen.height / 2 - 100, 180, 200);
 	private Rect signinWindowRect = new Rect (Screen.width / 2 - 90, Screen.height / 2 - 115, 180, 230);
@@ -50,14 +47,14 @@ public class UserManager : DataBase<User>
 		GUI.color = Color.white;
 
 		GUILayout.Label ("Username :");
-		username = GUILayout.TextField (username);
+		UserInfo.username = GUILayout.TextField (UserInfo.username);
 
 		GUILayout.Label ("Password :");
-		password = GUILayout.PasswordField (password, '*');
+		UserInfo.password = GUILayout.PasswordField (UserInfo.password, '*');
 
 		if (GUILayout.Button ("Connect")) 
 		{
-			StartCoroutine(Connect ());
+			Login ();
 		}
 
 		if (GUILayout.Button ("Creat account")) 
@@ -75,18 +72,18 @@ public class UserManager : DataBase<User>
 		GUI.color = Color.white;
 
 		GUILayout.Label ("*Email :");
-		email = GUILayout.TextField (email);
+		UserInfo.email = GUILayout.TextField (UserInfo.email);
 
 		GUILayout.Label ("*Username :");
-		username = GUILayout.TextField (username);
+		UserInfo.username = GUILayout.TextField (UserInfo.username);
 
 		GUILayout.Label ("*Password :");
-		password = GUILayout.PasswordField (password, '*');
+		UserInfo.password = GUILayout.PasswordField (UserInfo.password, '*');
 
 		GUILayout.Space (5);
 		if (GUILayout.Button ("Sign in")) 
 		{
-			StartCoroutine (Signin ());
+			Signin ();
 		}
 
 		GUI.DragWindow(new Rect(0, 0, Screen.width, Screen.height));
@@ -94,57 +91,44 @@ public class UserManager : DataBase<User>
 
 	private void WindowUserPanel(int id)
 	{
-		GUILayout.Label ("Username : " + Username);
-		//GUILayout.Label("Gold : " + gold);
+		GUILayout.Label ("Username : " + UserInfo.username);
 		if (GUILayout.Button ("Log out")) 
 		{
-			StartCoroutine (Logout ());
+			Logout ();
 		}
 	}
 
-	private IEnumerator Connect()
+	private void Login()
 	{
-		User user = new User (email, username, password);
-		yield return StartCoroutine(CheckQuery("http://mafialaw.alwaysdata.net/user.php?action=login", user, value => Connected = value, value => connectionError = value));
-		//TODO
-			
-		if (!connected) { registered = true; }
-	}
-
-	private IEnumerator Signin()
-	{
-		bool isValid = false;
-
-		User user = new User (email, username, password);
-
-		yield return StartCoroutine(CheckQuery ("http://mafialaw.alwaysdata.net/user.php?action=signin", user, value => isValid = value, value => signinError = value));
-
-		if (isValid) 
-		{
-			StartCoroutine (Connect ());
+		if (!DataBase.CheckQuery ("http://mafialaw.alwaysdata.net/user.php?action=login", user)) { connectionError = "Invalid credential"; }
+		else 
+		{ 
+			Connected = true;
+			registered = true;
 		}
 	}
 
-	private IEnumerator Logout()
+	private void Signin()
 	{
-		//TODO
+		if (DataBase.CheckQuery ("http://mafialaw.alwaysdata.net/user.php?action=signin", user, value => signinError = value)) { Login (); }
+	}
 
-		email = "";
-		username = "";
-		password = "";		
+	private void Logout()
+	{
+		user = new User ();	
 		connectionError = "";
-
-		
 		Connected = false;
-
-		yield return null;
 	}
 
-	public static string Username
+	public static User UserInfo
 	{
 		get
 		{
-			return username;
+			return user;
+		}
+		private set
+		{ 
+			user = value;
 		}
 	}
 
@@ -159,20 +143,12 @@ public class UserManager : DataBase<User>
 			connected = value;
 		}
 	}
-
-	public static int Id
-	{
-		get
-		{ 
-			return id;
-		}
-	}
 }
 
 [System.Serializable]
 public class User
 {
-	public int id;
+	private int id = 0;
 	public string email;
 	public string username;
 	public string password;
@@ -182,5 +158,24 @@ public class User
 		this.email = email;
 		this.username = username;
 		this.password = password;
+	}
+
+	public User()
+	{
+		email = "";
+		username = "";
+		password = "";
+	}
+
+	public int Id
+	{
+		get
+		{ 
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
 	}
 }

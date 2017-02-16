@@ -12,11 +12,7 @@
 		
 		if($data)
 		{
-			echo "1";
-		}
-		else
-		{
-			echo("Invalid credential");
+			echo $data["id"];
 		}
 	}
 	

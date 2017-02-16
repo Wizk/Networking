@@ -35,7 +35,7 @@ public class ChatBox : MonoBehaviour
         {
 			if (msgToSend != "") 
 			{
-				netView.RPC ("SendMsg", RPCMode.All, UserManager.Username + " : " + msgToSend + "\n");
+				netView.RPC ("SendMsg", RPCMode.All, UserManager.UserInfo.username + " : " + msgToSend + "\n");
 				msgToSend = "";
 			}
         }

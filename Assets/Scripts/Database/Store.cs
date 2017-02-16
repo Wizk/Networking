@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Store : DataBase<Item>
+public class Store : MonoBehaviour
 {
 	[SerializeField] private List<Item> items;
 
@@ -15,7 +15,7 @@ public class Store : DataBase<Item>
 
 	private void LoadItems()
 	{
-		StartCoroutine (Query ("http://mafialaw.alwaysdata.net/store.php?action=listItems", items));	
+		DataBase.Fetch ("http://mafialaw.alwaysdata.net/store.php?action=listItems", items, ';');	
 	}
 
 	private void OnGUI()
@@ -50,8 +50,7 @@ public class Store : DataBase<Item>
 			{
 				if (GUILayout.Button (ItemInfo(items[i])))
 				{
-					UserItem userItem = new UserItem (UserManager.Id, items[i].id, 0);
-					StartCoroutine (Post ("http://mafialaw.alwaysdata.net/store.php?action=buyItem", items[i]));
+					//Inventory.BuyItem(new UserItem (UserManager.UserInfo.Id, items[i].id, 0));
 				}
 			}
 			break;
@@ -148,20 +147,17 @@ public class Item
 		this.payable = payable;
 		this.stock = stock;
 	}
-}
 
-[System.Serializable]
-public class UserItem
-{
-	public int idUser;
-	public int idItem;
-	public int stock;
-
-	public UserItem(int idUser, int idItem, int stock)
+	public int Id
 	{
-		this.idUser = idUser;
-		this.idItem = idItem;
-		this.stock = stock;
+		get
+		{
+			return id;
+		}
+		set
+		{ 
+			id = value;
+		}
 	}
 }
 
